@@ -1,4 +1,7 @@
-CREATE DATABASE IF NOT EXISTS passmaster;
+CREATE DATABASE IF NOT EXISTS passmaster
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
 USE passmaster;
 
 CREATE TABLE users (
@@ -8,7 +11,7 @@ CREATE TABLE users (
   password VARCHAR(255) NOT NULL,
   role ENUM('admin', 'organizer', 'staff', 'buyer') DEFAULT 'buyer',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE events (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -21,8 +24,10 @@ CREATE TABLE events (
   ticket_price DECIMAL(10, 2) NOT NULL,
   status ENUM('draft', 'published', 'cancelled', 'completed') DEFAULT 'draft',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (organizer_id) REFERENCES users(id) ON DELETE CASCADE
-);
+  FOREIGN KEY (organizer_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_events_status (status),
+  INDEX idx_events_date (date)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE tickets (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -35,8 +40,11 @@ CREATE TABLE tickets (
   checked_in_by INT NULL,
   FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
   FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (checked_in_by) REFERENCES users(id) ON DELETE SET NULL
-);
+  FOREIGN KEY (checked_in_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_tickets_buyer (buyer_id),
+  INDEX idx_tickets_event_status (event_id, status),
+  INDEX idx_tickets_checked_in_by (checked_in_by)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE transactions (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -48,10 +56,7 @@ CREATE TABLE transactions (
   payment_id VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
-  FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_tickets_code ON tickets(unique_code);
-CREATE INDEX idx_tickets_event ON tickets(event_id);
-CREATE INDEX idx_events_organizer ON events(organizer_id);
-CREATE INDEX idx_transactions_buyer ON transactions(buyer_id);
+  FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_transactions_ticket (ticket_id),
+  INDEX idx_transactions_buyer (buyer_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
