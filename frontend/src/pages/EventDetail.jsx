@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -14,12 +14,19 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [buyMsg, setBuyMsg] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [editMedia, setEditMedia] = useState(false);
+  const [mediaUrl, setMediaUrl] = useState('');
+  const [mediaType, setMediaType] = useState('image');
 
-  useEffect(() => {
+  const loadEvent = useCallback(() => {
     api.get(`/events/${id}`)
       .then((res) => setEvent(res.data.event))
       .catch(() => navigate('/'))
       .finally(() => setLoading(false));
+  }, [id, navigate]);
+
+  useEffect(() => {
+    loadEvent();
 
     const s = connectSocket();
     joinEventRoom(id);
@@ -65,6 +72,26 @@ export default function EventDetail() {
     }
   };
 
+  const addMediaItem = () => {
+    if (!mediaUrl.trim()) return;
+    const url = mediaUrl.trim();
+    const type = url.match(/youtube\.com|youtu\.be/) ? 'video' : mediaType;
+    const updated = [...(event.media || []), { type, url }];
+    api.put(`/events/${id}/media`, { media: updated }).then((res) => {
+      setEvent({ ...event, media: res.data.media });
+      setMediaUrl('');
+    }).catch((err) => alert(err.response?.data?.error || 'Error al agregar media'));
+  };
+
+  const removeMediaItem = (i) => {
+    const updated = (event.media || []).filter((_, idx) => idx !== i);
+    api.put(`/events/${id}/media`, { media: updated }).then((res) => {
+      setEvent({ ...event, media: res.data.media });
+    }).catch((err) => alert(err.response?.data?.error || 'Error al eliminar media'));
+  };
+
+  const isOwner = user && (user.id === event?.organizer_id || user.role === 'admin');
+
   if (loading) return <div className="text-center mt-5"><div className="spinner-border" role="status" /></div>;
   if (!event) return <div className="container mt-4"><div className="alert alert-danger">Evento no encontrado</div></div>;
 
@@ -92,6 +119,52 @@ export default function EventDetail() {
               <div className="section-divider"></div>
               <h4>Acerca del evento</h4>
               <p className="text-muted">{event.description || 'Sin descripción'}</p>
+
+              {event.media && event.media.length > 0 && (
+                <div className="mt-4">
+                  <div className="d-flex align-items-center gap-2 mb-2">
+                    <h5 className="mb-0">Galería</h5>
+                    {isOwner && (
+                      <button className="btn btn-sm btn-outline-primary" onClick={() => setEditMedia(!editMedia)}>
+                        {editMedia ? 'Listo' : 'Editar'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="d-flex flex-wrap gap-2">
+                    {event.media.map((m, i) => (
+                      <div key={i} style={{ flex: '1 1 200px', maxWidth: 400 }} className="position-relative">
+                        {editMedia && (
+                          <button className="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 p-0 lh-1 z-1" style={{ fontSize: 10 }} onClick={() => removeMediaItem(i)}>x</button>
+                        )}
+                        {m.type === 'video' ? (
+                          <div className="ratio ratio-16x9 rounded overflow-hidden">
+                            <iframe src={m.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} title={`media-${i}`} allowFullScreen />
+                          </div>
+                        ) : (
+                          <a href={m.url} target="_blank" rel="noopener noreferrer">
+                            <img src={m.url} alt="" className="rounded img-fluid" style={{ maxHeight: 250, objectFit: 'cover', width: '100%' }} onError={(e) => e.target.style.display = 'none'} />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {isOwner && editMedia && (
+                <div className="mt-3 p-3 bg-light rounded">
+                  <label className="form-label small fw-medium">Agregar foto/video</label>
+                  <div className="input-group">
+                    <select className="form-select" style={{ maxWidth: 100 }} value={mediaType} onChange={(e) => setMediaType(e.target.value)}>
+                      <option value="image">Imagen</option>
+                      <option value="video">Video</option>
+                    </select>
+                    <input className="form-control" placeholder="Pega la URL..." value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} />
+                    <button className="btn btn-primary" onClick={addMediaItem}>+</button>
+                  </div>
+                  <small className="text-muted d-block mt-1">Pega URLs de imágenes o videos de YouTube</small>
+                </div>
+              )}
 
               <h5 className="mt-4">📍 Ubicación</h5>
               <p className="text-muted">{event.location}</p>

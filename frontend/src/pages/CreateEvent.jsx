@@ -13,14 +13,28 @@ export default function CreateEvent() {
     ticket_price: '',
     status: 'published',
   });
+  const [media, setMedia] = useState([]);
+  const [mediaUrl, setMediaUrl] = useState('');
+  const [mediaType, setMediaType] = useState('image');
   const [error, setError] = useState('');
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const addMedia = () => {
+    if (!mediaUrl.trim()) return;
+    const url = mediaUrl.trim();
+    const type = url.match(/youtube\.com|youtu\.be/) ? 'video' : mediaType;
+    setMedia([...media, { type, url }]);
+    setMediaUrl('');
+  };
+
+  const removeMedia = (i) => setMedia(media.filter((_, idx) => idx !== i));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post('/events', form);
+      const payload = media.length > 0 ? { ...form, media } : form;
+      const res = await api.post('/events', payload);
       navigate(`/events/${res.data.event.id}`);
     } catch (err) {
       setError(err.response?.data?.error || 'Error al crear evento');
@@ -75,7 +89,34 @@ export default function CreateEvent() {
                 <option value="draft">Borrador (oculto)</option>
               </select>
             </div>
-            <button className="btn btn-primary w-100" type="submit">🎉 Crear Evento</button>
+
+            <div className="mb-4">
+              <label className="form-label small fw-medium">Fotos / Videos del evento</label>
+              <div className="input-group mb-2">
+                <select className="form-select" style={{ maxWidth: 110 }} value={mediaType} onChange={(e) => setMediaType(e.target.value)}>
+                  <option value="image">Imagen</option>
+                  <option value="video">Video</option>
+                </select>
+                <input className="form-control" placeholder="Pega la URL..." value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} />
+                <button className="btn btn-outline-primary" type="button" onClick={addMedia}>+</button>
+              </div>
+              {media.length > 0 && (
+                <div className="d-flex flex-wrap gap-2 mt-2">
+                  {media.map((m, i) => (
+                    <div key={i} className="position-relative" style={{ width: 80, height: 80 }}>
+                      {m.type === 'image' ? (
+                        <img src={m.url} alt="" className="rounded" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => e.target.style.display = 'none'} />
+                      ) : (
+                        <div className="bg-dark rounded d-flex align-items-center justify-content-center text-white" style={{ width: '100%', height: '100%' }}>▶</div>
+                      )}
+                      <button className="btn btn-sm btn-danger position-absolute top-0 end-0 p-0 lh-1" style={{ fontSize: 10 }} onClick={() => removeMedia(i)}>x</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <small className="text-muted d-block mt-1">Pega URLs de imágenes o videos de YouTube</small>
+            </div>
+            <button className="btn btn-primary w-100" type="submit">Crear Evento</button>
           </form>
         </div>
       </div>

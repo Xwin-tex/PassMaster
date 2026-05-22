@@ -8,6 +8,7 @@ router.get('/:id', eventController.getById);
 
 router.post('/', authenticate, authorize('admin', 'organizer'), eventController.create);
 router.put('/:id', authenticate, authorize('admin', 'organizer'), eventController.update);
+router.put('/:id/media', authenticate, authorize('admin', 'organizer'), eventController.updateMedia);
 
 router.get('/:id/tickets', authenticate, eventController.getTickets);
 

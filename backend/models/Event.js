@@ -1,11 +1,11 @@
 const pool = require('../config/db');
 
 const Event = {
-  async create({ organizer_id, name, description, date, location, capacity, ticket_price }) {
+  async create({ organizer_id, name, description, date, location, capacity, ticket_price, media }) {
     const [result] = await pool.execute(
-      `INSERT INTO events (organizer_id, name, description, date, location, capacity, ticket_price)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [organizer_id, name, description, date, location, capacity, ticket_price]
+      `INSERT INTO events (organizer_id, name, description, date, location, capacity, ticket_price, media)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [organizer_id, name, description, date, location, capacity, ticket_price, media ? JSON.stringify(media) : null]
     );
     return result.insertId;
   },
@@ -46,6 +46,10 @@ const Event = {
         fields.push(`${key} = ?`);
         params.push(data[key]);
       }
+    }
+    if (data.media !== undefined) {
+      fields.push('media = ?');
+      params.push(JSON.stringify(data.media));
     }
     if (fields.length === 0) return;
     params.push(id);

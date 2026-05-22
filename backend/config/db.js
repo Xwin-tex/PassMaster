@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS events (
   capacity INT NOT NULL,
   ticket_price DECIMAL(10, 2) NOT NULL,
   status ENUM('draft', 'published', 'cancelled', 'completed') DEFAULT 'draft',
+  media JSON DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (organizer_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_events_status (status),
@@ -87,6 +88,8 @@ async function autoMigrate() {
       console.log('⚙️ Ejecutando migración inicial...');
       await conn.query(SCHEMA_SQL);
       console.log('✅ Base de datos inicializada');
+    } else {
+      try { await conn.execute('ALTER TABLE events ADD COLUMN media JSON DEFAULT NULL'); } catch (_) {}
     }
     conn.release();
   } catch (err) {

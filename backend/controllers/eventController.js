@@ -3,7 +3,7 @@ const Ticket = require('../models/Ticket');
 
 exports.create = async (req, res) => {
   try {
-    const { name, description, date, location, capacity, ticket_price } = req.body;
+    const { name, description, date, location, capacity, ticket_price, media } = req.body;
     if (!name || !date || !location || !capacity || !ticket_price) {
       return res.status(400).json({ error: 'Faltan campos requeridos' });
     }
@@ -16,6 +16,7 @@ exports.create = async (req, res) => {
       location,
       capacity: parseInt(capacity),
       ticket_price: parseFloat(ticket_price),
+      media,
     });
 
     const event = await Event.findById(id);
@@ -73,6 +74,23 @@ exports.update = async (req, res) => {
     res.json({ event: updated });
   } catch (err) {
     res.status(500).json({ error: 'Error al actualizar evento' });
+  }
+};
+
+exports.updateMedia = async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ error: 'Evento no encontrado' });
+    if (event.organizer_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'No autorizado' });
+    }
+
+    const { media } = req.body;
+    await Event.update(req.params.id, { media });
+    res.json({ media });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al actualizar media' });
   }
 };
 
