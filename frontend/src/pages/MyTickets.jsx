@@ -1,6 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import TicketQR from '../components/TicketQR';
 
@@ -13,7 +11,6 @@ export default function MyTickets() {
       .catch(() => {});
   }, []);
 
-  const ticketRefs = useRef({});
   const [transferEmail, setTransferEmail] = useState({});
 
   const handleRefund = async (ticketId) => {
@@ -39,14 +36,18 @@ export default function MyTickets() {
     }
   };
 
-  const downloadPDF = async (ticketId) => {
-    const el = ticketRefs.current[ticketId];
-    if (!el) return;
-    const canvas = await html2canvas(el);
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a6');
-    pdf.addImage(imgData, 'PNG', 0, 0, 105, 148);
-    pdf.save(`ticket-${ticketId}.pdf`);
+  const printTicket = (ticketId) => {
+    const content = document.getElementById(`ticket-print-${ticketId}`);
+    if (!content) return;
+    const win = window.open('', '_blank');
+    win.document.write(`<html><head><title>Ticket</title><style>
+      body { font-family: sans-serif; padding: 20px; background: #0F0A1A; color: white; }
+      .code { font-family: monospace; font-size: 24px; letter-spacing: 3px; text-align: center; padding: 16px; background: rgba(255,255,255,0.1); border-radius: 8px; }
+      @media print { body { padding: 0; } }
+    </style></head><body>${content.innerHTML}</body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); win.close(); }, 500);
   };
 
   return (
@@ -70,8 +71,8 @@ export default function MyTickets() {
           <div className="row g-4">
             {tickets.map((t, i) => (
               <div key={t.id} className="col-md-6 fade-in-up" style={{ animationDelay: `${i * 0.1}s` }}>
-                <div ref={(el) => ticketRefs.current[t.id] = el} className="card ticket-card p-0 overflow-hidden">
-                  <div className="p-4">
+                <div className="card ticket-card p-0 overflow-hidden">
+                  <div id={`ticket-print-${t.id}`} className="p-4">
                     <div className="d-flex justify-content-between align-items-start mb-3">
                       <div>
                         <p className="small text-purple-300 mb-0 opacity-75">🎟️ ENTRADA DIGITAL</p>
@@ -95,8 +96,8 @@ export default function MyTickets() {
                         🕐 {new Date(t.purchase_date).toLocaleDateString()}
                       </small>
                       <div className="d-flex gap-1">
-                        <button className="btn btn-sm btn-outline-light" onClick={() => downloadPDF(t.id)}>
-                          📄 PDF
+                        <button className="btn btn-sm btn-outline-light" onClick={() => printTicket(t.id)}>
+                          🖨️ Imprimir
                         </button>
                         {t.status === 'active' && (
                           <button className="btn btn-sm btn-outline-danger" onClick={() => handleRefund(t.id)}>
