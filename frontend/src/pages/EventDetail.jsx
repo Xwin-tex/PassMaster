@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import socket, { connectSocket, joinEventRoom, leaveEventRoom } from '../services/socket';
 import CapacityGauge from '../components/CapacityGauge';
+import PaymentModal from '../components/PaymentModal';
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -15,6 +16,7 @@ export default function EventDetail() {
   const [buyMsg, setBuyMsg] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [editMedia, setEditMedia] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
   const [mediaUrl, setMediaUrl] = useState('');
   const [mediaType, setMediaType] = useState('image');
 
@@ -52,8 +54,13 @@ export default function EventDetail() {
 
   const handleBuy = async () => {
     if (!user) return navigate('/login');
+    setShowPayment(true);
+  };
+
+  const handlePaymentSuccess = async () => {
+    setShowPayment(false);
     try {
-      setBuyMsg('Procesando...');
+      setBuyMsg('Generando boletos...');
       await api.post('/tickets/purchase', { event_id: Number(id), quantity });
       navigate('/my-tickets');
     } catch (err) {
@@ -239,6 +246,13 @@ export default function EventDetail() {
           </div>
         </div>
       </div>
+
+      <PaymentModal
+        show={showPayment}
+        total={parseFloat(event.ticket_price) * quantity}
+        onClose={() => setShowPayment(false)}
+        onSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 }
