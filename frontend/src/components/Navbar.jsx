@@ -12,8 +12,9 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-3">
-      <Link className="navbar-brand fw-bold" to="/">
+    <nav className="navbar navbar-expand-lg navbar-dark px-4">
+      <Link className="navbar-brand d-flex align-items-center" to="/">
+        <span className="navbar-brand-icon">P</span>
         PassMaster
       </Link>
       <div className="collapse navbar-collapse">
@@ -39,14 +40,16 @@ export default function Navbar() {
             </>
           )}
         </ul>
-        <span className="navbar-text me-3">{user?.name}</span>
-        {user ? (
-          <button className="btn btn-outline-light btn-sm" onClick={handleLogout}>
-            Cerrar sesión
-          </button>
-        ) : (
-          <Link className="btn btn-outline-light btn-sm" to="/login">Ingresar</Link>
-        )}
+        <div className="d-flex align-items-center gap-2">
+          {user && <span className="text-white-50 small">{user.name}</span>}
+          {user ? (
+            <button className="btn btn-outline-light btn-sm" onClick={handleLogout}>
+              Cerrar sesión
+            </button>
+          ) : (
+            <Link className="btn btn-outline-light btn-sm" to="/login">Ingresar</Link>
+          )}
+        </div>
       </div>
     </nav>
   );

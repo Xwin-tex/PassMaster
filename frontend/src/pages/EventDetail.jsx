@@ -1,0 +1,161 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
+import socket, { connectSocket, joinEventRoom, leaveEventRoom } from '../services/socket';
+import CapacityGauge from '../components/CapacityGauge';
+
+export default function EventDetail() {
+  const { id } = useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [event, setEvent] = useState(null);
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [buyMsg, setBuyMsg] = useState('');
+
+  useEffect(() => {
+    api.get(`/events/${id}`)
+      .then((res) => setEvent(res.data.event))
+      .catch(() => navigate('/'))
+      .finally(() => setLoading(false));
+
+    const s = connectSocket();
+    joinEventRoom(id);
+
+    const handleCapacity = (data) => {
+      if (data.eventId === Number(id)) {
+        setEvent((prev) => prev ? { ...prev, sold: data.sold } : prev);
+      }
+    };
+    s.on('capacity:update', handleCapacity);
+
+    return () => {
+      leaveEventRoom(id);
+      s.off('capacity:update', handleCapacity);
+    };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (user && (user.role === 'admin' || user.role === 'organizer' || user.role === 'staff')) {
+      api.get(`/events/${id}/tickets`).then((res) => setTickets(res.data.tickets)).catch(() => {});
+    }
+  }, [id, user]);
+
+  const handleBuy = async () => {
+    if (!user) return navigate('/login');
+    try {
+      setBuyMsg('Procesando...');
+      await api.post('/tickets/purchase', { event_id: Number(id) });
+      navigate('/my-tickets');
+    } catch (err) {
+      setBuyMsg(err.response?.data?.error || 'Error al comprar');
+    }
+  };
+
+  const isOrganizer = user && (user.role === 'admin' || user.role === 'organizer');
+
+  const handlePublish = async () => {
+    try {
+      const res = await api.put(`/events/${id}`, { status: 'published' });
+      setEvent(res.data.event);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al publicar');
+    }
+  };
+
+  if (loading) return <div className="text-center mt-5"><div className="spinner-border" role="status" /></div>;
+  if (!event) return <div className="container mt-4"><div className="alert alert-danger">Evento no encontrado</div></div>;
+
+  const sold = event.sold || 0;
+  const available = event.capacity - sold;
+
+  return (
+    <div className="fade-in">
+      <div className="hero-section mb-4">
+        <div className="container">
+          <span className="badge bg-white text-dark mb-2 slide-down">
+            {event.status === 'published' ? '📢 Publicado' : '📝 Borrador'}
+          </span>
+          <h1 className="display-5 fw-bold mb-2 slide-down" style={{ animationDelay: '0.1s' }}>{event.name}</h1>
+          <p className="text-white-50 mb-0 slide-down" style={{ animationDelay: '0.2s' }}>
+            📅 {new Date(event.date).toLocaleDateString()} &nbsp;📍 {event.location}
+          </p>
+        </div>
+      </div>
+
+      <div className="container">
+        <div className="row g-4">
+          <div className="col-md-8">
+            <div className="card p-4 fade-in-up">
+              <div className="section-divider"></div>
+              <h4>Acerca del evento</h4>
+              <p className="text-muted">{event.description || 'Sin descripción'}</p>
+
+              <h5 className="mt-4">📍 Ubicación</h5>
+              <p className="text-muted">{event.location}</p>
+
+              <h5 className="mt-4">📅 Fecha</h5>
+              <p className="text-muted">{new Date(event.date).toLocaleString()}</p>
+
+              <h5 className="mt-4">Aforo</h5>
+              <CapacityGauge sold={sold} capacity={event.capacity} />
+            </div>
+          </div>
+
+          <div className="col-md-4">
+            <div className="card p-4 text-center fade-in-up" style={{ animationDelay: '0.2s' }}>
+              <span className="badge bg-warning text-dark fs-6 mb-2">
+                {event.status === 'published' ? '✅ Publicado' : '⏳ Borrador'}
+              </span>
+              <h2 className="fw-bold mb-2" style={{ color: 'var(--pm-primary)' }}>
+                ${parseFloat(event.ticket_price).toFixed(2)}
+              </h2>
+              <p className={`badge bg-${available > 0 ? 'success' : 'danger'} fs-6 mb-3`}>
+                {available > 0 ? `${available} boletos disponibles` : 'Agotado'}
+              </p>
+
+              {event.status === 'published' ? (
+                <button
+                  className="btn btn-primary w-100 btn-lg"
+                  disabled={available <= 0 || !!buyMsg}
+                  onClick={handleBuy}
+                >
+                  {buyMsg || '🎟️ Comprar boleto'}
+                </button>
+              ) : isOrganizer && (
+                <button className="btn btn-success w-100 btn-lg" onClick={handlePublish}>
+                  📢 Publicar evento
+                </button>
+              )}
+
+              <div className="progress mt-3" style={{ height: '8px' }}>
+                <div className="progress-bar" style={{ width: `${event.capacity > 0 ? (sold / event.capacity) * 100 : 0}%` }} />
+              </div>
+              <small className="text-muted mt-1">{sold} de {event.capacity} vendidos</small>
+            </div>
+
+            {tickets.length > 0 && (
+              <div className="card mt-3 fade-in-up" style={{ animationDelay: '0.3s' }}>
+                <div className="card-header bg-transparent fw-bold">Boletos vendidos ({tickets.length})</div>
+                <div className="list-group list-group-flush" style={{ maxHeight: 250, overflowY: 'auto' }}>
+                  {tickets.map((t) => (
+                    <div key={t.id} className="list-group-item d-flex justify-content-between align-items-center">
+                      <div>
+                        <small className="fw-medium">{t.buyer_name}</small>
+                        <small className="d-block text-muted">{t.buyer_email}</small>
+                      </div>
+                      <span className={`badge bg-${t.status === 'active' ? 'success' : t.status === 'used' ? 'secondary' : 'danger'}`}>
+                        {t.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

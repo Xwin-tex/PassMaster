@@ -2,7 +2,7 @@
   "name": "passmaster-frontend",
   "version": "1.0.0",
   "private": true,
-  "homepage": "./",
+  "type": "module",
   "engines": { "node": ">=18.0.0" },
   "dependencies": {
     "@stripe/react-stripe-js": "^2.8.0",
@@ -12,16 +12,17 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",
-    "react-scripts": "5.0.1",
     "recharts": "^2.12.7",
     "socket.io-client": "^4.7.5"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build"
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
   },
-  "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   }
 }
