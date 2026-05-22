@@ -9,6 +9,7 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^2.8.0",
     "@stripe/stripe-js": "^4.9.0",
+    "@vitejs/plugin-react": "^4.3.1",
     "axios": "^1.7.7",
     "bootstrap": "^5.3.3",
     "qrcode.react": "^4.2.0",
@@ -16,10 +17,7 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",
     "recharts": "^2.12.7",
-    "socket.io-client": "^4.7.5"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
+    "socket.io-client": "^4.7.5",
     "vite": "^5.4.8"
   },
   "scripts": {
