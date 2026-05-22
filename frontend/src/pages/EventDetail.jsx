@@ -132,9 +132,9 @@ export default function EventDetail() {
                   </div>
                   <div className="d-flex flex-wrap gap-2">
                     {event.media.map((m, i) => (
-                      <div key={i} style={{ flex: '1 1 200px', maxWidth: 400 }} className="position-relative">
+                      <div key={i} style={{ flex: '1 1 100%', maxWidth: '100%' }} className="position-relative">
                         {editMedia && (
-                          <button className="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 p-0 lh-1 z-1" style={{ fontSize: 10 }} onClick={() => removeMediaItem(i)}>x</button>
+                          <button className="btn btn-danger position-absolute top-0 end-0 m-2 z-1" onClick={() => removeMediaItem(i)}>Eliminar</button>
                         )}
                         {m.type === 'video' ? (
                           <div className="ratio ratio-16x9 rounded overflow-hidden">
@@ -192,9 +192,9 @@ export default function EventDetail() {
               {event.status === 'published' ? (
                 <>
                   <div className="d-flex align-items-center justify-content-center gap-2 mb-3">
-                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
+                    <button className="btn btn-outline-secondary" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
                     <span className="fw-bold fs-5" style={{ minWidth: 40, textAlign: 'center' }}>{quantity}</span>
-                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setQuantity(Math.min(available, quantity + 1))}>+</button>
+                    <button className="btn btn-outline-secondary" onClick={() => setQuantity(Math.min(available, quantity + 1))}>+</button>
                     <small className="text-muted">boletos</small>
                   </div>
                   <div className="mb-3 small text-muted">Total: <strong>${(parseFloat(event.ticket_price) * quantity).toFixed(2)}</strong></div>

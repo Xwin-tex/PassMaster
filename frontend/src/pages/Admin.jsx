@@ -28,7 +28,9 @@ export default function Admin() {
       <div className="container">
         <div className="card fade-in-up">
           <div className="card-header bg-transparent fw-bold">Usuarios ({users.length})</div>
-          <div className="table-responsive">
+
+          {/* Desktop table */}
+          <div className="table-responsive d-none d-md-block">
             <table className="table table-hover mb-0">
               <thead>
                 <tr>
@@ -47,18 +49,11 @@ export default function Admin() {
                     <td>{u.name}</td>
                     <td className="text-muted">{u.email}</td>
                     <td>
-                      <span className={`badge bg-${u.role === 'admin' ? 'danger' : u.role === 'organizer' ? 'primary' : u.role === 'staff' ? 'info' : 'secondary'}`}>
-                        {u.role}
-                      </span>
+                      <span className={`badge bg-${u.role === 'admin' ? 'danger' : u.role === 'organizer' ? 'primary' : u.role === 'staff' ? 'info' : 'secondary'}`}>{u.role}</span>
                     </td>
                     <td className="text-muted small">{new Date(u.created_at).toLocaleDateString()}</td>
                     <td>
-                      <select
-                        className="form-select form-select-sm"
-                        value={u.role}
-                        onChange={(e) => changeRole(u.id, e.target.value)}
-                        style={{ maxWidth: 130 }}
-                      >
+                      <select className="form-select form-select-sm" value={u.role} onChange={(e) => changeRole(u.id, e.target.value)} style={{ maxWidth: 130 }}>
                         <option value="buyer">Comprador</option>
                         <option value="staff">Staff</option>
                         <option value="organizer">Organizador</option>
@@ -69,6 +64,28 @@ export default function Admin() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="d-md-none">
+            {users.map((u) => (
+              <div key={u.id} className="p-3 border-bottom">
+                <div className="d-flex justify-content-between align-items-start mb-1">
+                  <span className="fw-medium">{u.name}</span>
+                  <span className={`badge bg-${u.role === 'admin' ? 'danger' : u.role === 'organizer' ? 'primary' : u.role === 'staff' ? 'info' : 'secondary'}`}>{u.role}</span>
+                </div>
+                <p className="text-muted small mb-2">{u.email}</p>
+                <div className="d-flex justify-content-between align-items-center">
+                  <small className="text-muted">ID: {u.id} · {new Date(u.created_at).toLocaleDateString()}</small>
+                  <select className="form-select form-select-sm" style={{ maxWidth: 120 }} value={u.role} onChange={(e) => changeRole(u.id, e.target.value)}>
+                    <option value="buyer">Comprador</option>
+                    <option value="staff">Staff</option>
+                    <option value="organizer">Organizador</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

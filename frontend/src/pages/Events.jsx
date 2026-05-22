@@ -31,17 +31,17 @@ export default function Events() {
       </div>
 
       <div className="container">
-        <form onSubmit={handleSearch} className="mb-4 fade-in-up">
-          <div className="input-group">
+          <form onSubmit={handleSearch} className="mb-4 fade-in-up">
+          <div className="d-flex gap-2">
             <input
-              className="form-control"
+              className="form-control flex-grow-1"
               placeholder="🔍 Buscar por nombre, ubicación..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <button className="btn btn-primary" type="submit">Buscar</button>
+            <button className="btn btn-primary flex-shrink-0" type="submit">Buscar</button>
             {search && (
-              <button className="btn btn-outline-secondary" type="button" onClick={() => { setSearch(''); fetchEvents(''); }}>
+              <button className="btn btn-outline-secondary flex-shrink-0" type="button" onClick={() => { setSearch(''); fetchEvents(''); }}>
                 Limpiar
               </button>
             )}
@@ -78,7 +78,7 @@ export default function Events() {
                         📅 {new Date(e.date).toLocaleDateString()} &nbsp;📍 {e.location}
                       </p>
                       {e.description && (
-                        <p className="text-muted small flex-grow-1">{e.description.substring(0, 120)}</p>
+                        <p className="text-muted small flex-grow-1 text-truncate" style={{ whiteSpace: 'normal', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{e.description}</p>
                       )}
                       <div className="progress mb-2" style={{ height: '6px' }}>
                         <div className="progress-bar" style={{ width: `${pct}%` }} />
@@ -89,7 +89,7 @@ export default function Events() {
                         </span>
                         <span className="text-muted small">{available} lugares</span>
                       </div>
-                      <Link to={`/events/${e.id}`} className="btn btn-primary w-100 mt-3 btn-sm">
+                      <Link to={`/events/${e.id}`} className="btn btn-primary w-100 mt-3">
                         Ver detalles
                       </Link>
                     </div>

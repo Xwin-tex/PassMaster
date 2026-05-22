@@ -40,6 +40,7 @@ export default function MyTickets() {
     const content = document.getElementById(`ticket-print-${ticketId}`);
     if (!content) return;
     const win = window.open('', '_blank');
+    if (!win) { window.print(); return; }
     win.document.write(`<html><head><title>Ticket</title><style>
       body { font-family: sans-serif; padding: 20px; background: #0F0A1A; color: white; }
       .code { font-family: monospace; font-size: 24px; letter-spacing: 3px; text-align: center; padding: 16px; background: rgba(255,255,255,0.1); border-radius: 8px; }
@@ -96,20 +97,20 @@ export default function MyTickets() {
                         🕐 {new Date(t.purchase_date).toLocaleDateString()}
                       </small>
                       <div className="d-flex gap-1">
-                        <button className="btn btn-sm btn-outline-light" onClick={() => printTicket(t.id)}>
+                        <button className="btn btn-outline-light" onClick={() => printTicket(t.id)}>
                           🖨️ Imprimir
                         </button>
                         {t.status === 'active' && (
-                          <button className="btn btn-sm btn-outline-danger" onClick={() => handleRefund(t.id)}>
+                          <button className="btn btn-outline-danger" onClick={() => handleRefund(t.id)}>
                             💰 Reembolsar
                           </button>
                         )}
                       </div>
                     </div>
                     {t.status === 'active' && (
-                      <div className="input-group input-group-sm mt-2">
+                      <div className="d-flex gap-1 mt-2">
                         <input className="form-control" placeholder="Email para transferir" value={transferEmail[t.id] || ''} onChange={(e) => setTransferEmail({ ...transferEmail, [t.id]: e.target.value })} />
-                        <button className="btn btn-outline-warning" onClick={() => handleTransfer(t.id)}>Transferir</button>
+                        <button className="btn btn-outline-warning flex-shrink-0" onClick={() => handleTransfer(t.id)}>Transferir</button>
                       </div>
                     )}
                   </div>

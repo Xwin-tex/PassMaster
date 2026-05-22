@@ -102,9 +102,9 @@ export default function CheckIn() {
                 </div>
               )}
 
-              <div className="d-flex gap-2 mt-3">
+              <div className="d-flex flex-column flex-sm-row gap-2 mt-3">
                 {ticket.status === 'active' && (
-                  <button className="btn btn-success w-100 btn-lg" onClick={handleCheckIn} disabled={loading}>
+                  <button className="btn btn-success flex-fill" onClick={handleCheckIn} disabled={loading}>
                     {loading ? 'Procesando...' : '✅ Confirmar ingreso'}
                   </button>
                 )}
