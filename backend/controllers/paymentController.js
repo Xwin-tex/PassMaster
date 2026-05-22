@@ -3,6 +3,8 @@ const Event = require('../models/Event');
 
 exports.createPaymentIntent = async (req, res) => {
   try {
+    if (!stripe) return res.status(503).json({ error: 'Pagos no disponibles (Stripe no configurado)' });
+
     const { event_id, quantity = 1 } = req.body;
 
     const event = await Event.findById(event_id);
@@ -28,6 +30,8 @@ exports.createPaymentIntent = async (req, res) => {
 };
 
 exports.handleWebhook = async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Stripe no configurado' });
+
   const sig = req.headers['stripe-signature'];
   let event;
 
@@ -66,6 +70,8 @@ exports.handleWebhook = async (req, res) => {
 
 exports.refund = async (req, res) => {
   try {
+    if (!stripe) return res.status(503).json({ error: 'Reembolsos no disponibles (Stripe no configurado)' });
+
     const { ticketId } = req.body;
     if (!ticketId) return res.status(400).json({ error: 'ticketId requerido' });
 
