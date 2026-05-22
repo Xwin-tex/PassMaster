@@ -55,8 +55,9 @@ app.use(errorHandler);
 setupSocket(io);
 
 const PORT = process.env.PORT || 4000;
-const srv = server.listen(PORT, () => {
-  console.log(`PassMaster backend running on port ${PORT}`);
+const HOST = '0.0.0.0';
+const srv = server.listen(PORT, HOST, () => {
+  console.log(`PassMaster backend running on ${HOST}:${PORT}`);
   console.log(`Accepting requests from: ${FRONTEND_URL}`);
 });
 
