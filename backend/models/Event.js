@@ -22,6 +22,11 @@ const Event = {
       sql += ' AND organizer_id = ?';
       params.push(filters.organizer_id);
     }
+    if (filters.search) {
+      sql += ' AND (name LIKE ? OR location LIKE ? OR description LIKE ?)';
+      const like = `%${filters.search}%`;
+      params.push(like, like, like);
+    }
 
     sql += ' ORDER BY date DESC';
     const [rows] = await pool.execute(sql, params);

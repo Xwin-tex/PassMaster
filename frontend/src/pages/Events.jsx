@@ -4,12 +4,22 @@ import api from '../services/api';
 
 export default function Events() {
   const [events, setEvents] = useState([]);
+  const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    api.get('/events?status=published')
+  const fetchEvents = (q = '') => {
+    const params = new URLSearchParams({ status: 'published' });
+    if (q) params.set('search', q);
+    api.get(`/events?${params}`)
       .then((res) => setEvents(res.data.events))
       .catch(() => {});
-  }, []);
+  };
+
+  useEffect(() => { fetchEvents(); }, []);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchEvents(search);
+  };
 
   return (
     <div className="fade-in">
@@ -21,11 +31,28 @@ export default function Events() {
       </div>
 
       <div className="container">
+        <form onSubmit={handleSearch} className="mb-4 fade-in-up">
+          <div className="input-group">
+            <input
+              className="form-control"
+              placeholder="🔍 Buscar por nombre, ubicación..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button className="btn btn-primary" type="submit">Buscar</button>
+            {search && (
+              <button className="btn btn-outline-secondary" type="button" onClick={() => { setSearch(''); fetchEvents(''); }}>
+                Limpiar
+              </button>
+            )}
+          </div>
+        </form>
+
         {events.length === 0 ? (
           <div className="card p-5 text-center fade-in-up">
             <span style={{ fontSize: '3rem' }}>🎭</span>
-            <h4 className="mt-3">No hay eventos publicados</h4>
-            <p className="text-muted">Vuelve pronto para ver los próximos eventos.</p>
+            <h4 className="mt-3">{search ? 'Sin resultados' : 'No hay eventos publicados'}</h4>
+            <p className="text-muted">{search ? 'Prueba con otro término de búsqueda.' : 'Vuelve pronto para ver los próximos eventos.'}</p>
           </div>
         ) : (
           <div className="row g-4">

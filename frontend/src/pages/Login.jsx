@@ -39,9 +39,10 @@ export default function Login() {
           </div>
           <button className="btn btn-primary w-100" type="submit">Ingresar</button>
         </form>
-        <p className="mt-3 text-center small text-muted">
-          ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
-        </p>
+        <div className="mt-3 text-center small text-muted">
+          <p className="mb-1"><Link to="/forgot-password">¿Olvidaste tu contraseña?</Link></p>
+          <p className="mb-0">¿No tienes cuenta? <Link to="/register">Regístrate</Link></p>
+        </div>
       </div>
     </div>
   );

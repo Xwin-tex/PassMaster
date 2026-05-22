@@ -13,6 +13,7 @@ export default function EventDetail() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [buyMsg, setBuyMsg] = useState('');
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     api.get(`/events/${id}`)
@@ -46,7 +47,7 @@ export default function EventDetail() {
     if (!user) return navigate('/login');
     try {
       setBuyMsg('Procesando...');
-      await api.post('/tickets/purchase', { event_id: Number(id) });
+      await api.post('/tickets/purchase', { event_id: Number(id), quantity });
       navigate('/my-tickets');
     } catch (err) {
       setBuyMsg(err.response?.data?.error || 'Error al comprar');
@@ -116,13 +117,22 @@ export default function EventDetail() {
               </p>
 
               {event.status === 'published' ? (
-                <button
-                  className="btn btn-primary w-100 btn-lg"
-                  disabled={available <= 0 || !!buyMsg}
-                  onClick={handleBuy}
-                >
-                  {buyMsg || '🎟️ Comprar boleto'}
-                </button>
+                <>
+                  <div className="d-flex align-items-center justify-content-center gap-2 mb-3">
+                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
+                    <span className="fw-bold fs-5" style={{ minWidth: 40, textAlign: 'center' }}>{quantity}</span>
+                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setQuantity(Math.min(available, quantity + 1))}>+</button>
+                    <small className="text-muted">boletos</small>
+                  </div>
+                  <div className="mb-3 small text-muted">Total: <strong>${(parseFloat(event.ticket_price) * quantity).toFixed(2)}</strong></div>
+                  <button
+                    className="btn btn-primary w-100 btn-lg"
+                    disabled={available <= 0 || buyMsg}
+                    onClick={handleBuy}
+                  >
+                    {buyMsg || '🎟️ Comprar boleto'}
+                  </button>
+                </>
               ) : isOrganizer && (
                 <button className="btn btn-success w-100 btn-lg" onClick={handlePublish}>
                   📢 Publicar evento

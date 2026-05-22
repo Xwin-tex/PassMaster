@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import api from '../services/api';
+import TicketQR from '../components/TicketQR';
 
 export default function MyTickets() {
   const [tickets, setTickets] = useState([]);
@@ -9,6 +12,42 @@ export default function MyTickets() {
       .then((res) => setTickets(res.data.tickets))
       .catch(() => {});
   }, []);
+
+  const ticketRefs = useRef({});
+  const [transferEmail, setTransferEmail] = useState({});
+
+  const handleRefund = async (ticketId) => {
+    if (!confirm('¿Solicitar reembolso de este ticket?')) return;
+    try {
+      await api.post('/payments/refund', { ticketId });
+      alert('Reembolso procesado');
+      setTickets(tickets.map((t) => t.id === ticketId ? { ...t, status: 'refunded' } : t));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error');
+    }
+  };
+
+  const handleTransfer = async (ticketId) => {
+    const email = transferEmail[ticketId];
+    if (!email) return alert('Ingresa un email');
+    try {
+      await api.post('/tickets/transfer', { ticketId, newOwnerEmail: email });
+      alert('Ticket transferido');
+      setTickets(tickets.filter((t) => t.id !== ticketId));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al transferir');
+    }
+  };
+
+  const downloadPDF = async (ticketId) => {
+    const el = ticketRefs.current[ticketId];
+    if (!el) return;
+    const canvas = await html2canvas(el);
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a6');
+    pdf.addImage(imgData, 'PNG', 0, 0, 105, 148);
+    pdf.save(`ticket-${ticketId}.pdf`);
+  };
 
   return (
     <div className="fade-in">
@@ -31,7 +70,7 @@ export default function MyTickets() {
           <div className="row g-4">
             {tickets.map((t, i) => (
               <div key={t.id} className="col-md-6 fade-in-up" style={{ animationDelay: `${i * 0.1}s` }}>
-                <div className="card ticket-card p-0 overflow-hidden">
+                <div ref={(el) => ticketRefs.current[t.id] = el} className="card ticket-card p-0 overflow-hidden">
                   <div className="p-4">
                     <div className="d-flex justify-content-between align-items-start mb-3">
                       <div>
@@ -45,6 +84,9 @@ export default function MyTickets() {
                     <p className="text-white-50 small mb-3">
                       📅 {new Date(t.event_date).toLocaleDateString()} &nbsp;📍 {t.event_location}
                     </p>
+                    <div className="text-center mb-3">
+                      <TicketQR code={t.unique_code} size={140} />
+                    </div>
                     <div className="ticket-code text-center mb-3">
                       {t.unique_code}
                     </div>
@@ -52,8 +94,23 @@ export default function MyTickets() {
                       <small className="text-white-50">
                         🕐 {new Date(t.purchase_date).toLocaleDateString()}
                       </small>
-                      <small className="text-white-50 opacity-75">PassMaster</small>
+                      <div className="d-flex gap-1">
+                        <button className="btn btn-sm btn-outline-light" onClick={() => downloadPDF(t.id)}>
+                          📄 PDF
+                        </button>
+                        {t.status === 'active' && (
+                          <button className="btn btn-sm btn-outline-danger" onClick={() => handleRefund(t.id)}>
+                            💰 Reembolsar
+                          </button>
+                        )}
+                      </div>
                     </div>
+                    {t.status === 'active' && (
+                      <div className="input-group input-group-sm mt-2">
+                        <input className="form-control" placeholder="Email para transferir" value={transferEmail[t.id] || ''} onChange={(e) => setTransferEmail({ ...transferEmail, [t.id]: e.target.value })} />
+                        <button className="btn btn-outline-warning" onClick={() => handleTransfer(t.id)}>Transferir</button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

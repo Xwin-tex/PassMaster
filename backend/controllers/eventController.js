@@ -31,6 +31,7 @@ exports.list = async (req, res) => {
     const filters = {};
     if (req.query.status) filters.status = req.query.status;
     if (req.user?.role === 'organizer') filters.organizer_id = req.user.id;
+    if (req.query.search) filters.search = req.query.search;
 
     const events = await Event.findAll(filters);
 

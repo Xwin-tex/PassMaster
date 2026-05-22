@@ -9,5 +9,6 @@ router.get('/validate/:code', authenticate, ticketController.validate);
 router.post('/checkin', authenticate, authorize('admin', 'staff', 'organizer'), ticketController.checkIn);
 
 router.get('/event/:eventId', authenticate, authorize('admin', 'organizer', 'staff'), ticketController.eventTickets);
+router.post('/transfer', authenticate, ticketController.transfer);
 
 module.exports = router;

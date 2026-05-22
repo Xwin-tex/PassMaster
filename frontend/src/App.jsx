@@ -5,12 +5,16 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Events from './pages/Events';
 import CreateEvent from './pages/CreateEvent';
 import EventDetail from './pages/EventDetail';
 import CheckIn from './pages/CheckIn';
 import MyTickets from './pages/MyTickets';
+import Profile from './pages/Profile';
+import Admin from './pages/Admin';
 
 export default function App() {
   return (
@@ -20,6 +24,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/events" element={<Events />} />
           <Route path="/events/new" element={
@@ -30,6 +36,8 @@ export default function App() {
             <ProtectedRoute roles={['admin', 'organizer', 'staff']}><CheckIn /></ProtectedRoute>
           } />
           <Route path="/my-tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute roles={['admin']}><Admin /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

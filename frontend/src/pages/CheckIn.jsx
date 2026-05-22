@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../services/api';
+import TicketQR from '../components/TicketQR';
 
 export default function CheckIn() {
   const [code, setCode] = useState('');
@@ -74,6 +75,9 @@ export default function CheckIn() {
 
           {ticket && (
             <div className="slide-down">
+              <div className="text-center mb-3">
+                <TicketQR code={ticket.unique_code || code} size={160} />
+              </div>
               <hr />
               <h5 className="mb-1">{ticket.event_name}</h5>
               <p className="text-muted small mb-3">

@@ -4,5 +4,6 @@ const { authenticate } = require('../middlewares/auth');
 
 router.post('/create-payment-intent', authenticate, paymentController.createPaymentIntent);
 router.post('/webhook', paymentController.handleWebhook);
+router.post('/refund', authenticate, paymentController.refund);
 
 module.exports = router;

@@ -1,12 +1,15 @@
 const Event = require('../models/Event');
 const Ticket = require('../models/Ticket');
 const Transaction = require('../models/Transaction');
+const User = require('../models/User');
 const { generateUniqueCode } = require('../utils/generateCode');
+const { sendTicketEmail } = require('../utils/mail');
 
 exports.purchase = async (req, res) => {
   try {
-    const { event_id } = req.body;
+    const { event_id, quantity = 1 } = req.body;
     if (!event_id) return res.status(400).json({ error: 'event_id requerido' });
+    const qty = Math.min(Math.max(1, parseInt(quantity) || 1), 10);
 
     const event = await Event.findById(event_id);
     if (!event) return res.status(404).json({ error: 'Evento no encontrado' });
@@ -15,39 +18,49 @@ exports.purchase = async (req, res) => {
     }
 
     const sold = await Event.getSoldCount(event_id);
-    if (sold >= event.capacity) {
-      return res.status(400).json({ error: 'El evento está agotado' });
+    if (sold + qty > event.capacity) {
+      return res.status(400).json({ error: `Solo quedan ${event.capacity - sold} boletos disponibles` });
     }
 
-    const unique_code = generateUniqueCode();
-
-    const ticketId = await Ticket.create({
-      event_id,
-      buyer_id: req.user.id,
-      unique_code,
-    });
-
-    const ticket = await Ticket.findById(ticketId);
+    const tickets = [];
+    for (let i = 0; i < qty; i++) {
+      const code = generateUniqueCode();
+      const ticketId = await Ticket.create({ event_id, buyer_id: req.user.id, unique_code: code });
+      const ticket = await Ticket.findById(ticketId);
+      tickets.push(ticket);
+    }
 
     await Transaction.create({
-      ticket_id: ticketId,
+      ticket_id: tickets[0].id,
       buyer_id: req.user.id,
-      amount: event.ticket_price,
+      amount: event.ticket_price * qty,
       payment_method: 'stripe',
       payment_status: 'pending',
       payment_id: null,
     });
 
+    const buyer = await User.findById(req.user.id);
+    for (const t of tickets) {
+      sendTicketEmail({
+        to: buyer.email,
+        ticketCode: t.unique_code,
+        eventName: event.name,
+        eventDate: event.date,
+        eventLocation: event.location,
+        buyerName: buyer.name,
+      }).catch((err) => console.error('Email error:', err.message));
+    }
+
     const io = req.app.get('io');
     if (io) {
       io.to(`event-${event_id}`).emit('capacity:update', {
         eventId: event_id,
-        sold: sold + 1,
+        sold: sold + qty,
         capacity: event.capacity,
       });
     }
 
-    res.status(201).json({ ticket });
+    res.status(201).json({ tickets, total: qty });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al comprar ticket' });
@@ -133,5 +146,34 @@ exports.eventTickets = async (req, res) => {
     res.json({ tickets });
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener tickets del evento' });
+  }
+};
+
+exports.transfer = async (req, res) => {
+  try {
+    const { ticketId, newOwnerEmail } = req.body;
+    if (!ticketId || !newOwnerEmail) {
+      return res.status(400).json({ error: 'ticketId y newOwnerEmail requeridos' });
+    }
+
+    const ticket = await Ticket.findById(ticketId);
+    if (!ticket) return res.status(404).json({ error: 'Ticket no encontrado' });
+    if (ticket.buyer_id !== req.user.id) {
+      return res.status(403).json({ error: 'No eres el dueño de este ticket' });
+    }
+    if (ticket.status !== 'active') {
+      return res.status(400).json({ error: 'Solo se pueden transferir tickets activos' });
+    }
+
+    const newOwner = await User.findByEmail(newOwnerEmail);
+    if (!newOwner) return res.status(404).json({ error: 'El email de destino no está registrado' });
+
+    const pool = require('../config/db');
+    await pool.execute('UPDATE tickets SET buyer_id = ? WHERE id = ?', [newOwner.id, ticketId]);
+
+    res.json({ message: 'Ticket transferido exitosamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al transferir ticket' });
   }
 };

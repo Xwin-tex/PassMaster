@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
+const { sendPasswordResetEmail } = require('../utils/mail');
 
 function signToken(user) {
   return jwt.sign(
@@ -67,5 +69,77 @@ exports.me = async (req, res) => {
     res.json({ user });
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener usuario' });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, email, currentPassword, newPassword } = req.body;
+    const user = await User.findByEmail(req.user.email);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    if (currentPassword && newPassword) {
+      const valid = await User.comparePassword(currentPassword, user.password);
+      if (!valid) return res.status(400).json({ error: 'Contraseña actual incorrecta' });
+    }
+
+    const updates = {};
+    if (name) updates.name = name;
+    if (email) updates.email = email;
+    if (newPassword) updates.password = newPassword;
+
+    await User.update(req.user.id, updates);
+    const updated = await User.findById(req.user.id);
+    const token = signToken(updated);
+    res.json({ user: updated, token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al actualizar perfil' });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email requerido' });
+
+    const user = await User.findByEmail(email);
+    if (!user) return res.status(404).json({ error: 'No hay cuenta con ese email' });
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 3600000); // 1 hora
+    await User.setResetToken(email, resetToken, expires);
+
+    const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetLink = `${FRONTEND_URL}/#/reset-password/${resetToken}`;
+
+    await sendPasswordResetEmail({
+      to: email,
+      name: user.name,
+      resetLink,
+    });
+
+    res.json({ message: 'Revisa tu correo para restablecer la contraseña' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al solicitar restablecimiento' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: 'Token y contraseña requeridos' });
+
+    const user = await User.findByResetToken(token);
+    if (!user) return res.status(400).json({ error: 'Token inválido o expirado' });
+
+    await User.update(user.id, { password });
+    await User.setResetToken(user.email, null, null);
+
+    res.json({ message: 'Contraseña actualizada correctamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al restablecer contraseña' });
   }
 };
