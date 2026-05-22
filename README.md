@@ -109,12 +109,6 @@ pm2 start ecosystem.config.js
 | GET | `/api/tickets/validate/:code` | JWT | Validar código |
 | POST | `/api/tickets/checkin` | Staff | Realizar check-in |
 
-### Pagos (Stripe)
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| POST | `/api/payments/create-payment-intent` | JWT | Crear PaymentIntent |
-| POST | `/api/payments/webhook` | No | Webhook Stripe |
-
 ## Stack técnico
 
 - **Backend:** Node.js, Express, JWT, bcrypt, Socket.IO, Stripe, MySQL2
